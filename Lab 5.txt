@@ -1,0 +1,22 @@
+PS C:\Users\Emil> chcp 1251
+Текущая кодовая страница: 1251
+PS C:\Users\Emil> set "PGCLIENTENCODING=WIN1251"
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# CREATE DATABASE online_class;
+CREATE DATABASE
+postgres=# \c online_class
+Вы подключены к базе данных "online_class" как пользователь "postgres".
+online_class=# \c postgress
+подключиться к серверу "localhost" (::1), порту 5432 не удалось: ВАЖНО:  база данных "postgress" не существует
+Сохранено предыдущее подключение
+online_class=# \c postgres
+Вы подключены к базе данных "postgres" как пользователь "postgres".
+postgres=# DROP DATABASE online_class;
+DROP DATABASE
+postgres=# \q
+PS C:\Users\Emil>
