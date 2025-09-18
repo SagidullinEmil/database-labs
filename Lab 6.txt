@@ -1,0 +1,56 @@
+PS C:\Users\Emil> chcp 1251
+Текущая кодовая страница: 1251
+PS C:\Users\Emil> set "PGCLIENTENCODING=WIN1251"
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# \encoding WIN1251
+postgres=# CREATE TABLE students_2 (
+postgres(#     student_id SERIAL PRIMARY KEY,
+postgres(#     first_name VARCHAR(50) NOT NULL,
+postgres(#     last_name VARCHAR(50) NOT NULL,
+postgres(#     email VARCHAR(100) UNIQUE NOT NULL,
+postgres(#     faculty VARCHAR(100)
+postgres(# );
+CREATE TABLE
+postgres=# DROP TABLE students_2;
+DROP TABLE
+postgres=# CREATE TABLE students_2 (
+postgres(#     student_id SERIAL PRIMARY KEY,
+postgres(#     first_name VARCHAR(50) NOT NULL,
+postgres(#     last_name VARCHAR(50) NOT NULL,
+postgres(#     email VARCHAR(100) UNIQUE NOT NULL,
+postgres(#     faculty VARCHAR(100)
+postgres(# );
+CREATE TABLE
+postgres=# DROP TABLE IF EXISTS students_2;
+DROP TABLE
+postgres=# CREATE TABLE students_2 (
+postgres(#     student_id SERIAL PRIMARY KEY,
+postgres(#     first_name VARCHAR(50) NOT NULL,
+postgres(#     last_name VARCHAR(50) NOT NULL,
+postgres(#     email VARCHAR(100) UNIQUE NOT NULL,
+postgres(#     faculty VARCHAR(100)
+postgres(# );
+CREATE TABLE
+postgres=# ALTER TABLE students_2 ADD COLUMN date_of_birth DATE;
+ALTER TABLE
+postgres=# ALTER TABLE students_2 DROP COLUMN faculty;
+ALTER TABLE
+postgres=# ALTER TABLE students_2 ALTER COLUMN first_name TYPE TEXT;
+ALTER TABLE
+postgres=# ALTER TABLE students_2 ADD CONSTRAINT unique_student_email UNIQUE (email);
+ALTER TABLE
+postgres=# ALTER TABLE students_2 RENAME COLUMN email TO email_address;
+ALTER TABLE
+postgres=# ALTER TABLE students_2 RENAME TO university_list;
+ALTER TABLE
+postgres=# CREATE TEMP TABLE temp_table (
+postgres(#   id   INT,
+postgres(#   note TEXT
+postgres(# );
+CREATE TABLE
+postgres=# \q
