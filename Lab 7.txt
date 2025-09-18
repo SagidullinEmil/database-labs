@@ -1,0 +1,163 @@
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# \l
+                                                               Список баз данных
+    Имя    | Владелец | Кодировка | Провайдер локали |     LC_COLLATE      |      LC_CTYPE       | Локаль | Правила ICU |     Права доступа
+-----------+----------+-----------+------------------+---------------------+---------------------+--------+-------------+-----------------------
+ postgres  | postgres | UTF8      | libc             | Russian_Russia.1251 | Russian_Russia.1251 |        |             |
+ template0 | postgres | UTF8      | libc             | Russian_Russia.1251 | Russian_Russia.1251 |        |             | =c/postgres          +
+           |          |           |                  |                     |                     |        |             | postgres=CTc/postgres
+ template1 | postgres | UTF8      | libc             | Russian_Russia.1251 | Russian_Russia.1251 |        |             | =c/postgres          +
+           |          |           |                  |                     |                     |        |             | postgres=CTc/postgres
+(3 строки)
+
+
+postgres=#  CREATE TABLE students (
+postgres(#     student_id INTEGER PRIMARY KEY,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(150)
+postgres(# );
+ОШИБКА:  отношение "students" уже существует
+postgres=# DROP TABLE students
+postgres-#  CREATE TABLE students (
+postgres(#     student_id INTEGER PRIMARY KEY,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(150)
+postgres(# );
+ОШИБКА:  ошибка синтаксиса (примерное положение: "CREATE")
+СТРОКА 2:  CREATE TABLE students (
+           ^
+postgres=#  CREATE TABLE students (
+postgres(#     student_id INTEGER PRIMARY KEY,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(150)
+postgres(# );
+ОШИБКА:  отношение "students" уже существует
+postgres=# \l
+                                                               Список баз данных
+    Имя    | Владелец | Кодировка | Провайдер локали |     LC_COLLATE      |      LC_CTYPE       | Локаль | Правила ICU |     Права доступа
+-----------+----------+-----------+------------------+---------------------+---------------------+--------+-------------+-----------------------
+ postgres  | postgres | UTF8      | libc             | Russian_Russia.1251 | Russian_Russia.1251 |        |             |
+ template0 | postgres | UTF8      | libc             | Russian_Russia.1251 | Russian_Russia.1251 |        |             | =c/postgres          +
+           |          |           |                  |                     |                     |        |             | postgres=CTc/postgres
+ template1 | postgres | UTF8      | libc             | Russian_Russia.1251 | Russian_Russia.1251 |        |             | =c/postgres          +
+           |          |           |                  |                     |                     |        |             | postgres=CTc/postgres
+(3 строки)
+
+
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE students (
+postgres(#     student_id INTEGER,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(150),
+postgres(#     PRIMARY KEY (student_id)
+postgres(# );
+CREATE TABLE
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE students (
+postgres(#     student_id INTEGER,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(150),
+postgres(#     CONSTRAINT pk_students PRIMARY KEY (student_id)
+postgres(# );
+CREATE TABLE
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE students (
+postgres(#     student_id INTEGER,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(150)
+postgres(# );
+CREATE TABLE
+postgres=# ALTER TABLE students ADD CONSTRAINT pk_students PRIMARY KEY (student_id);
+ALTER TABLE
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE students (
+postgres(#     student_id SERIAL PRIMARY KEY,
+postgres(#     name VARCHAR(100) NOT NULL,
+postgres(#     email VARCHAR(150) UNIQUE,
+postgres(#     faculty VARCHAR(50)
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO students (name, email, faculty) VALUES
+postgres-# ('Alice Johnson', 'alice@alatoo.edu.kg', 'Computer Science'),
+postgres-# ('Bob Smith', 'bob@alatoo.edu.kg', 'Mathematics'),
+postgres-# ('Robin Williams', 'robb@alatoo.edu.kg', 'Filming'),
+postgres-#
+postgres-# \q
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# INSERT INTO students (name, email, faculty) VALUES
+postgres-# ('Alice Johnson', 'alice@alatoo.edu.kg', 'Computer Science'),
+postgres-# ('Bob Smith', 'bob@alatoo.edu.kg', 'Mathematics'),
+postgres-# ('Carol Davis', 'carol@alatoo.edu.kg', 'Computer Science');
+INSERT 0 3
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE course_enrollments (
+postgres(#     student_id INTEGER,
+postgres(#     course_id INTEGER,
+postgres(#     semester VARCHAR(20),
+postgres(#     enrollment_date DATE DEFAULT CURRENT_DATE,
+postgres(#     grade CHAR(2),
+postgres(#     PRIMARY KEY (student_id, course_id, semester)
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO course_enrollments (student_id, course_id, semester, grade) VALUES
+postgres-# (1, 101, '2024-Spring', 'A'),
+postgres-# (1, 102, '2024-Spring', 'B+'),
+postgres-# (2, 101, '2024-Spring', 'A-'),
+postgres-# (1, 101, '2024-Fall', 'A+');
+INSERT 0 4
+postgres=# CREATE TABLE products (
+postgres(#     product_id SERIAL PRIMARY KEY,
+postgres(#     product_name VARCHAR(100) NOT NULL,
+postgres(#     price DECIMAL(10,2)
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE transactions (
+postgres(#     transaction_id BIGSERIAL PRIMARY KEY,  -- Can handle very large numbers
+postgres(#     amount DECIMAL(15,2),
+postgres(#     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE orders (
+postgres(#     order_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+postgres(#     customer_name VARCHAR(100),
+postgres(#     order_date DATE DEFAULT CURRENT_DATE
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE customers (
+postgres(#     customer_id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+postgres(#     customer_name VARCHAR(100),
+postgres(#     email VARCHAR(150)
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO customers (customer_id, customer_name, email)
+postgres-# VALUES (1000, 'VIP Customer', 'vip@example.com');
+INSERT 0 1
+postgres=# CREATE TABLE departments (
+postgres(#     dept_id INTEGER PRIMARY KEY,
+postgres(#     dept_name VARCHAR(100)
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO departments VALUES (1, 'Computer Science');
+INSERT 0 1
+postgres=# INSERT INTO departments VALUES (1, 'Mathematics');
+ОШИБКА:  повторяющееся значение ключа нарушает ограничение уникальности "departments_pkey"
+ПОДРОБНОСТИ:  Ключ "(dept_id)=(1)" уже существует.
+postgres=# INSERT INTO departments VALUES (NULL, 'Physics');
+ОШИБКА:  значение NULL в столбце "dept_id" отношения "departments" нарушает ограничение NOT NULL
+ПОДРОБНОСТИ:  Ошибочная строка содержит (null, Physics).
+postgres=# \q
