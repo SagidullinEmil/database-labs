@@ -1,0 +1,128 @@
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# CREATE TABLE departaments (
+postgres(#      dept_id SERIAL PRIMARY KEY,
+postgres(#      dept_name VARCHAR(100) NOT NULL,
+postgres(#      location VARCHAR(100)
+postgres(# );
+CREATE TABLE
+postgres=# \q
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# CREATE TABLE authors (
+postgres(#         author_id SERIAL PRIMARY KEY,
+postgres(#         first_name VARCHAR(50) NOT NULL,
+postgres(#         last_name VARCHAR(50) NOT NULL,
+postgres(#         birth_date DATE
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE books (
+postgres(#         book_id SERIAL PRIMARY KEY,
+postgres(#         title VARCHAR(200) NOT NULL,
+postgres(#         isbn VARCHAR(13) UNIQUE,
+postgres(#         publication_year INTEGER,
+postgres(#         available_copies INTEGER DEFAULT 1
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE book_authors (
+postgres(#         book_id INTEGER,
+postgres(#         author_id INTEGER,
+postgres(#
+postgres(#         PRIMARY KEY (book_id, author_id),
+postgres(#         FOREIGN KEY (book_id) REFERENCES books(book_id),
+postgres(#         FOREIGN KEY (author_id) REFERENCES authors(author_id)
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE members (
+postgres(#         member_id SERIAL PRIMARY KEY,
+postgres(#         first_name VARCHAR(50) NOT NULL,
+postgres(#         last_name VARCHAR(50) NOT NULL,
+postgres(#         email VARCHAR(100) UNIQUE NOT NULL,
+postgres(#         phone VARCHAR(15),
+postgres(#         membership_date DATE DEFAULT CURRENT_DATE
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE loans (
+postgres(#         loan_id SERIAL PRIMARY KEY,
+postgres(#         member_id INTEGER NOT NULL,
+postgres(#         book_id INTEGER NOT NULL,
+postgres(#         load_date DATE DEFAULT CURRENT_DATE,
+postgres(#         due_date DATE NOT NULL,
+postgres(#         return_date DATE,
+postgres(#         late_fee DECIMAL(10,2) DEFAULT 0.00,
+postgres(#
+postgres(#         FOREIGN KEY (member_id) REFERENCES members(member_id),
+postgres(#         FOREIGN KEY (book_id) REFERENCES books(book_id)
+postgres(# );
+CREATE TABLE
+postgres=# \dt
+              Список отношений
+ Схема  |     Имя      |   Тип   | Владелец
+--------+--------------+---------+----------
+ public | authors      | таблица | postgres
+ public | book_authors | таблица | postgres
+ public | books        | таблица | postgres
+ public | departaments | таблица | postgres
+ public | loans        | таблица | postgres
+ public | members      | таблица | postgres
+(6 строк)
+
+
+postgres=# \d authors
+                                                 Таблица "public.authors"
+  Столбец   |          Тип          | Правило сортировки | Допустимость NULL |                По умолчанию
+------------+-----------------------+--------------------+-------------------+--------------------------------------------
+ author_id  | integer               |                    | not null          | nextval('authors_author_id_seq'::regclass)
+ first_name | character varying(50) |                    | not null          |
+ last_name  | character varying(50) |                    | not null          |
+ birth_date | date                  |                    |                   |
+Индексы:
+    "authors_pkey" PRIMARY KEY, btree (author_id)
+Ссылки извне:
+    TABLE "book_authors" CONSTRAINT "book_authors_author_id_fkey" FOREIGN KEY (author_id) REFERENCES authors(author_id)
+
+
+postgres=# \d books
+                                                   Таблица "public.books"
+     Столбец      |          Тип           | Правило сортировки | Допустимость NULL |              По умолчанию
+------------------+------------------------+--------------------+-------------------+----------------------------------------
+ book_id          | integer                |                    | not null          | nextval('books_book_id_seq'::regclass)
+ title            | character varying(200) |                    | not null          |
+ isbn             | character varying(13)  |                    |                   |
+ publication_year | integer                |                    |                   |
+ available_copies | integer                |                    |                   | 1
+Индексы:
+    "books_pkey" PRIMARY KEY, btree (book_id)
+    "books_isbn_key" UNIQUE CONSTRAINT, btree (isbn)
+Ссылки извне:
+    TABLE "book_authors" CONSTRAINT "book_authors_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+    TABLE "loans" CONSTRAINT "loans_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+
+
+postgres=# \d loans
+                                            Таблица "public.loans"
+   Столбец   |      Тип      | Правило сортировки | Допустимость NULL |              По умолчанию
+-------------+---------------+--------------------+-------------------+----------------------------------------
+ loan_id     | integer       |                    | not null          | nextval('loans_loan_id_seq'::regclass)
+ member_id   | integer       |                    | not null          |
+ book_id     | integer       |                    | not null          |
+ load_date   | date          |                    |                   | CURRENT_DATE
+ due_date    | date          |                    | not null          |
+ return_date | date          |                    |                   |
+ late_fee    | numeric(10,2) |                    |                   | 0.00
+Индексы:
+    "loans_pkey" PRIMARY KEY, btree (loan_id)
+Ограничения внешнего ключа:
+    "loans_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+    "loans_member_id_fkey" FOREIGN KEY (member_id) REFERENCES members(member_id)
+
+
+postgres=# \q
