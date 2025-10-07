@@ -1,0 +1,186 @@
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# psql -U postgres -d postgres -p 5432
+postgres-# SELECT c.name,
+postgres-#        (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.customer_id) AS order_count
+postgres-# FROM customers c;
+ОШИБКА:  ошибка синтаксиса (примерное положение: "psql")
+СТРОКА 1: psql -U postgres -d postgres -p 5432
+          ^
+postgres=# SELECT c.name,
+postgres-#        (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.customer_id) AS order_count
+postgres-# FROM customers c;
+     name     | order_count
+--------------+-------------
+ Ada Lovelace |           2
+ Ada Lovelace |           0
+(2 строки)
+
+
+postgres=# WITH avg_total AS (
+postgres(#   SELECT AVG(total_amount) AS avg_amt FROM orders
+postgres(# )
+postgres-# SELECT o.order_id, o.total_amount
+postgres-# FROM orders o, avg_total a
+postgres-# WHERE o.total_amount > a.avg_amt;
+ order_id | total_amount
+----------+--------------
+        1 |        69.48
+(1 строка)
+
+
+postgres=# WITH RECURSIVE nums(n) AS (
+postgres(#   SELECT 1
+postgres(#   UNION ALL
+postgres(#   SELECT n + 1 FROM nums WHERE n < 10
+postgres(# )
+postgres-# SELECT n FROM nums;
+ n
+----
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+(10 строк)
+
+
+postgres=# SELECT customer_id
+postgres-# FROM orders
+postgres-# WHERE order_date >= DATE '2025-01-01' AND order_date < DATE '2026-01-01'
+postgres-# INTERSECT
+postgres-# SELECT customer_id
+postgres-# FROM orders
+postgres-# WHERE order_date >= DATE '2024-01-01' AND order_date < DATE '2025-01-01';
+ customer_id
+-------------
+(0 строк)
+
+
+postgres=# SELECT product_id
+postgres-# FROM products
+postgres-# EXCEPT
+postgres-# SELECT product_id
+postgres-# FROM order_items;
+ product_id
+------------
+(0 строк)
+
+
+postgres=# SELECT
+postgres-#   o.customer_id,
+postgres-#   o.order_id,
+postgres-#   o.order_date,
+postgres-#   o.total_amount,
+postgres-#   ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.order_date, o.order_id)     AS order_seq,
+postgres-#   SUM(o.total_amount) OVER (PARTITION BY o.customer_id ORDER BY o.order_date, o.order_id
+postgres(#                             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)          AS running_total
+postgres-# FROM orders o;
+ customer_id | order_id | order_date | total_amount | order_seq | running_total
+-------------+----------+------------+--------------+-----------+---------------
+           1 |        1 | 2025-09-30 |        69.48 |         1 |         69.48
+           1 |        2 | 2025-10-07 |         0.00 |         2 |         69.48
+(2 строки)
+
+
+postgres=# SELECT
+postgres-#   c.name,
+postgres-#   SUM(CASE WHEN o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+postgres(#            THEN o.total_amount ELSE 0 END) AS y2025,
+postgres-#   SUM(CASE WHEN o.order_date >= DATE '2024-01-01' AND o.order_date < DATE '2025-01-01'
+postgres(#            THEN o.total_amount ELSE 0 END) AS y2024
+postgres-# FROM customers c
+postgres-# LEFT JOIN orders o ON o.customer_id = c.customer_id
+postgres-# GROUP BY c.name
+postgres-# ORDER BY c.name;
+     name     | y2025 | y2024
+--------------+-------+-------
+ Ada Lovelace | 69.48 |     0
+(1 строка)
+
+
+postgres=# WITH per_customer AS (
+postgres(#   SELECT
+postgres(#     c.customer_id, c.name,
+postgres(#     SUM(CASE WHEN o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+postgres(#              THEN o.total_amount ELSE 0 END) AS y2025,
+postgres(#     SUM(CASE WHEN o.order_date >= DATE '2024-01-01' AND o.order_date < DATE '2025-01-01'
+postgres(#              THEN o.total_amount ELSE 0 END) AS y2024
+postgres(#   FROM customers c
+postgres(#   LEFT JOIN orders o ON o.customer_id = c.customer_id
+postgres(#   GROUP BY c.customer_id, c.name
+postgres(# )
+postgres-# SELECT
+postgres-#   customer_id,
+postgres-#   name,
+postgres-#   yr AS year,
+postgres-#   amt AS total_amount
+postgres-# FROM per_customer
+postgres-# CROSS JOIN LATERAL (VALUES
+postgres(#   ('2025', y2025),
+postgres(#   ('2024', y2024)
+postgres(# ) AS u(yr, amt)
+postgres-# WHERE amt <> 0
+postgres-# ORDER BY name, year;
+ customer_id |     name     | year | total_amount
+-------------+--------------+------+--------------
+           1 | Ada Lovelace | 2025 |        69.48
+(1 строка)
+
+
+postgres=# SELECT
+postgres-#   c.customer_id,
+postgres-#   c.name,
+postgres-#   COUNT(o.*)                                                   AS orders_total,
+postgres-#   COUNT(*) FILTER (WHERE o.total_amount >= 100)                AS big_orders,
+postgres-#   SUM(o.total_amount) FILTER (
+postgres(#     WHERE o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+postgres(#   )                                                            AS spend_2025
+postgres-# FROM customers c
+postgres-# LEFT JOIN orders o ON o.customer_id = c.customer_id
+postgres-# GROUP BY c.customer_id, c.name
+postgres-# ORDER BY c.name;
+ customer_id |     name     | orders_total | big_orders | spend_2025
+-------------+--------------+--------------+------------+------------
+           2 | Ada Lovelace |            0 |          0 |
+           1 | Ada Lovelace |            2 |          0 |      69.48
+(2 строки)
+
+
+postgres=# SELECT
+postgres-#   o.order_id,
+postgres-#   c.name,
+postgres-#   o.order_date,
+postgres-#   o.total_amount,
+postgres-#   CASE
+postgres-#     WHEN o.total_amount >= 100 THEN 'High'
+postgres-#     WHEN o.total_amount >= 50  THEN 'Medium'
+postgres-#     ELSE 'Low'
+postgres-#   END AS size_bucket
+postgres-# FROM orders o
+postgres-# JOIN customers c ON c.customer_id = o.customer_id
+postgres-# ORDER BY
+postgres-#   CASE
+postgres-#     WHEN o.total_amount >= 100 THEN 1
+postgres-#     WHEN o.total_amount >= 50  THEN 2
+postgres-#     ELSE 3
+postgres-#   END,
+postgres-#   o.order_date DESC, o.order_id DESC;
+ order_id |     name     | order_date | total_amount | size_bucket
+----------+--------------+------------+--------------+-------------
+        1 | Ada Lovelace | 2025-09-30 |        69.48 | Medium
+        2 | Ada Lovelace | 2025-10-07 |         0.00 | Low
+(2 строки)
+
+
+postgres=# \q
+PS C:\Users\Emil>
