@@ -1,0 +1,234 @@
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# CREATE TABLE customers (
+postgres(#     customer_id SERIAL PRIMARY KEY,
+postgres(#     name VARCHAR(100),
+postgres(#     email VARCHAR(100)
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE orders (
+postgres(#     order_id SERIAL PRIMARY KEY,
+postgres(#     customer_id INTEGER REFERENCES customers(customer_id),
+postgres(#     order_date DATE,
+postgres(#     total_amount DECIMAL(10,2)
+postgres(# );
+CREATE TABLE
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+postgres-# FROM customers c
+postgres-# INNER JOIN orders o ON c.customer_id = o.customer_id;
+ name | email | order_date | total_amount
+------+-------+------------+--------------
+(0 строк)
+
+
+postgres=# INSERT INTO customers (name, email)
+postgres-# VALUES ('Ada Lovelace', 'ada@example.com')
+postgres-# RETURNING customer_id;
+ customer_id
+-------------
+           1
+(1 строка)
+
+
+INSERT 0 1
+postgres=# INSERT INTO orders (customer_id, order_date, total_amount)
+postgres-# VALUES (1, '2025-09-30', 123.45);
+INSERT 0 1
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+postgres-# FROM customers c
+postgres-# INNER JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 строка)
+
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+postgres-# FROM customers c
+postgres-# LEFT JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 строка)
+
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+postgres-# FROM customers c
+postgres-# RIGHT JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 строка)
+
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+postgres-# FROM customers c
+postgres-# FULL OUTER JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 строка)
+
+
+postgres=# ALTER TABLE orders ADD COLUMN product_name text;
+ALTER TABLE
+postgres=# UPDATE orders SET product_name = 'Widget' WHERE order_id = 1;
+UPDATE 1
+postgres=# SELECT c.name, o.product_name
+postgres-# FROM customers c
+postgres-# CROSS JOIN orders o;
+     name     | product_name
+--------------+--------------
+ Ada Lovelace | Widget
+(1 строка)
+
+
+postgres=# CREATE TABLE IF NOT EXISTS products (
+postgres(#   product_id   SERIAL PRIMARY KEY,
+postgres(#   product_name TEXT        NOT NULL,
+postgres(#   price        NUMERIC(10,2) NOT NULL CHECK (price >= 0)
+postgres(# );
+CREATE TABLE
+postgres=# CREATE TABLE IF NOT EXISTS order_items (
+postgres(#   order_item_id SERIAL PRIMARY KEY,
+postgres(#   order_id      INTEGER NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
+postgres(#   product_id    INTEGER NOT NULL REFERENCES products(product_id),
+postgres(#   quantity      INTEGER NOT NULL CHECK (quantity > 0)
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO products (product_name, price) VALUES
+postgres-#   ('Widget', 19.99),
+postgres-#   ('Gadget', 29.50);
+INSERT 0 2
+postgres=# INSERT INTO customers (name, email)
+postgres-# VALUES ('Ada Lovelace', 'ada@example.com')
+postgres-# RETURNING customer_id;
+ customer_id
+-------------
+           2
+(1 строка)
+
+
+INSERT 0 1
+postgres=# INSERT INTO orders (customer_id, order_date, total_amount)
+postgres-# VALUES (1, CURRENT_DATE, 0.00)
+postgres-# RETURNING order_id;
+ order_id
+----------
+        2
+(1 строка)
+
+
+INSERT 0 1
+postgres=# WITH p AS (
+postgres(#   SELECT product_id, product_name FROM products
+postgres(# )
+postgres-# INSERT INTO order_items (order_id, product_id, quantity)
+postgres-# SELECT 1 AS order_id, p1.product_id, 2 AS quantity FROM p p1 WHERE p1.product_name = 'Widget'
+postgres-# UNION ALL
+postgres-# SELECT 1, p2.product_id, 1 FROM p p2 WHERE p2.product_name = 'Gadget';
+INSERT 0 2
+postgres=# UPDATE orders o
+postgres-# SET total_amount = sub.sum_line
+postgres-# FROM (
+postgres(#   SELECT oi.order_id, SUM(oi.quantity * p.price) AS sum_line
+postgres(#   FROM order_items oi
+postgres(#   JOIN products p ON p.product_id = oi.product_id
+postgres(#   GROUP BY oi.order_id
+postgres(# ) sub
+postgres-# WHERE o.order_id = sub.order_id;
+UPDATE 1
+postgres=# SELECT c.name, o.order_date, oi.quantity, p.product_name, p.price
+postgres-# FROM customers c
+postgres-# INNER JOIN orders o       ON c.customer_id = o.customer_id
+postgres-# INNER JOIN order_items oi ON o.order_id = oi.order_id
+postgres-# INNER JOIN products p     ON oi.product_id = p.product_id;
+     name     | order_date | quantity | product_name | price
+--------------+------------+----------+--------------+-------
+ Ada Lovelace | 2025-09-30 |        2 | Widget       | 19.99
+ Ada Lovelace | 2025-09-30 |        1 | Gadget       | 29.50
+(2 строки)
+
+
+postgres=# SELECT
+postgres-#   o1.customer_id,
+postgres-#   o1.order_id  AS order_id_a,
+postgres-#   o1.order_date AS order_date_a,
+postgres-#   o2.order_id  AS order_id_b,
+postgres-#   o2.order_date AS order_date_b
+postgres-# FROM orders o1
+postgres-# JOIN orders o2
+postgres-#   ON o1.customer_id = o2.customer_id
+postgres-#  AND o1.order_id < o2.order_id
+postgres-# ORDER BY o1.customer_id, order_id_a, order_id_b;
+ customer_id | order_id_a | order_date_a | order_id_b | order_date_b
+-------------+------------+--------------+------------+--------------
+           1 |          1 | 2025-09-30   |          2 | 2025-10-07
+(1 строка)
+
+
+postgres=# SELECT c.customer_id, c.name, o.order_id, o.order_date, o.total_amount
+postgres-# FROM customers c
+postgres-# JOIN orders o
+postgres-#   ON o.customer_id = c.customer_id
+postgres-#  AND o.order_date >= DATE '2025-09-01'
+postgres-#  AND o.order_date <  DATE '2025-10-01';
+ customer_id |     name     | order_id | order_date | total_amount
+-------------+--------------+----------+------------+--------------
+           1 | Ada Lovelace |        1 | 2025-09-30 |        69.48
+(1 строка)
+
+
+postgres=# CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX
+postgres=# CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX
+postgres=# CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX
+postgres=# SELECT c.name, o.order_date
+postgres-# FROM customers c
+postgres-# INNER JOIN orders o ON c.customer_id = o.customer_id;
+     name     | order_date
+--------------+------------
+ Ada Lovelace | 2025-09-30
+ Ada Lovelace | 2025-10-07
+(2 строки)
+
+
+postgres=# SELECT c.name, o.order_date
+postgres-# FROM customers c, orders o;
+     name     | order_date
+--------------+------------
+ Ada Lovelace | 2025-10-07
+ Ada Lovelace | 2025-09-30
+ Ada Lovelace | 2025-10-07
+ Ada Lovelace | 2025-09-30
+(4 строки)
+
+
+postgres=# SELECT c.name, o.order_date
+postgres-# FROM customers c
+postgres-# INNER JOIN orders o ON c.customer_id = o.customer_id;
+     name     | order_date
+--------------+------------
+ Ada Lovelace | 2025-09-30
+ Ada Lovelace | 2025-10-07
+(2 строки)
+
+
+postgres=# SELECT c.name
+postgres-# FROM customers c
+postgres-# LEFT JOIN orders o ON c.customer_id = o.customer_id
+postgres-# WHERE o.customer_id IS NULL;
+     name
+--------------
+ Ada Lovelace
+(1 строка)
+
+
+postgres=# \q
+PS C:\Users\Emil>
