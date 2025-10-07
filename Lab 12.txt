@@ -1,0 +1,295 @@
+PS C:\Users\Emil> psql -U postgres -d postgres -p 5432
+Пароль пользователя postgres:
+
+psql (17.6)
+Введите "help", чтобы получить справку.
+
+postgres=# \dt
+              Список отношений
+ Схема  |     Имя      |   Тип   | Владелец
+--------+--------------+---------+----------
+ public | authors      | таблица | postgres
+ public | book_authors | таблица | postgres
+ public | books        | таблица | postgres
+ public | departaments | таблица | postgres
+ public | loans        | таблица | postgres
+ public | members      | таблица | postgres
+ public | students     | таблица | postgres
+(7 строк)
+
+
+postgres=# select * from students;
+ student_id | first_name | last_name  | birth_date
+------------+------------+------------+------------
+          1 | Aibek      | Sharshenov | 2002-05-15
+(1 строка)
+
+
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE employees (
+postgres(#   id SERIAL PRIMARY KEY,
+postgres(#   first_name TEXT NOT NULL,
+postgres(#   last_name  TEXT NOT NULL,
+postgres(#   salary     NUMERIC(10,2) NOT NULL CHECK (salary >= 0)
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO employees (first_name, last_name, salary) VALUES
+postgres-#   ('Alice', 'Nguyen', 72000.00),
+postgres-#   ('Ben',   'Okafor', 55000.00),
+postgres-#   ('Carla', 'Romero', 81000.00);
+INSERT 0 3
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary
+----+------------+-----------+----------
+  1 | Alice      | Nguyen    | 72000.00
+  2 | Ben        | Okafor    | 55000.00
+  3 | Carla      | Romero    | 81000.00
+(3 строки)
+
+
+postgres=# SELECT first_name, last_name FROM employees;
+ first_name | last_name
+------------+-----------
+ Alice      | Nguyen
+ Ben        | Okafor
+ Carla      | Romero
+(3 строки)
+
+
+postgres=# SELECT first_name, last_name, salary * 0.10 AS potential_bonus FROM employees;
+ first_name | last_name | potential_bonus
+------------+-----------+-----------------
+ Alice      | Nguyen    |       7200.0000
+ Ben        | Okafor    |       5500.0000
+ Carla      | Romero    |       8100.0000
+(3 строки)
+
+
+postgres=# ALTER TABLE employees
+postgres-#   ADD COLUMN department TEXT;
+ALTER TABLE
+postgres=# UPDATE employees e
+postgres-# SET department = v.department
+postgres-# FROM (VALUES
+postgres(#   ('Alice','Nguyen','Engineering'),
+postgres(#   ('Ben','Okafor','Sales'),
+postgres(#   ('Carla','Romero','Finance')
+postgres(# ) AS v(first_name,last_name,department)
+postgres-# WHERE e.first_name = v.first_name
+postgres-#   AND e.last_name  = v.last_name;
+UPDATE 3
+postgres=# UPDATE employees e
+postgres-# SET department = v.department
+postgres-# FROM (VALUES
+postgres(#   ('Alice','Nguyen','Engineering'),
+postgres(#   ('Ben','Okafor','Sales'),
+postgres(#   ('Carla','Romero','Finance')
+postgres(# ) AS v(first_name,last_name,department)
+postgres-# WHERE e.first_name = v.first_name
+postgres-# AND e.last_name  = v.last_name;
+UPDATE 3
+postgres=# \d employees
+                                         Таблица "public.employees"
+  Столбец   |      Тип      | Правило сортировки | Допустимость NULL |             По умолчанию
+------------+---------------+--------------------+-------------------+---------------------------------------
+ id         | integer       |                    | not null          | nextval('employees_id_seq'::regclass)
+ first_name | text          |                    | not null          |
+ last_name  | text          |                    | not null          |
+ salary     | numeric(10,2) |                    | not null          |
+ department | text          |                    |                   |
+Индексы:
+    "employees_pkey" PRIMARY KEY, btree (id)
+Ограничения-проверки:
+    "employees_salary_check" CHECK (salary >= 0::numeric)
+
+
+postgres=#  SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department
+----+------------+-----------+----------+-------------
+  1 | Alice      | Nguyen    | 72000.00 | Engineering
+  2 | Ben        | Okafor    | 55000.00 | Sales
+  3 | Carla      | Romero    | 81000.00 | Finance
+(3 строки)
+
+
+postgres=# SELECT first_name, last_name, salary FROM employees WHERE department = 'Sales';
+ first_name | last_name |  salary
+------------+-----------+----------
+ Ben        | Okafor    | 55000.00
+(1 строка)
+
+
+postgres=# SELECT first_name, last_name FROM employees WHERE salary > 70000 AND department = 'Engineering';
+ first_name | last_name
+------------+-----------
+ Alice      | Nguyen
+(1 строка)
+
+
+postgres=# SELECT first_name, last_name FROM employees WHERE salary BETWEEN 60000 AND 90000;
+ first_name | last_name
+------------+-----------
+ Alice      | Nguyen
+ Carla      | Romero
+(2 строки)
+
+
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department
+----+------------+-----------+----------+-------------
+  1 | Alice      | Nguyen    | 72000.00 | Engineering
+  2 | Ben        | Okafor    | 55000.00 | Sales
+  3 | Carla      | Romero    | 81000.00 | Finance
+(3 строки)
+
+
+postgres=# SELECT first_name, department FROM employees WHERE last_name LIKE 'R%';
+ first_name | department
+------------+------------
+ Carla      | Finance
+(1 строка)
+
+
+postgres=# ALTER TABLE employees
+postgres-#   ADD COLUMN email TEXT;
+ALTER TABLE
+postgres=# UPDATE employees e
+postgres-# SET email = lower(v.email)
+postgres-# FROM (VALUES
+postgres(#   ('Alice','Nguyen','alice.nguyen@gmail.com'),
+postgres(#   ('Ben','Okafor','ben.okafor@yandex.ru'),
+postgres(#   ('Carla','Romero','carla.romero@yahoo.com')
+postgres(# ) AS v(first_name,last_name,email)
+postgres-# WHERE e.first_name = v.first_name
+postgres-#   AND e.last_name  = v.last_name;
+UPDATE 3
+postgres=# SELECT email FROM employees WHERE email ILIKE '%@gmail.com';
+         email
+------------------------
+ alice.nguyen@gmail.com
+(1 строка)
+
+
+postgres=# SELECT first_name, last_name
+postgres-# FROM employees
+postgres-# WHERE first_name ~ '^[AB]';
+ first_name | last_name
+------------+-----------
+ Alice      | Nguyen
+ Ben        | Okafor
+(2 строки)
+
+
+postgres=# SELECT email
+postgres-# FROM employees
+postgres-# WHERE email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$';
+         email
+------------------------
+ alice.nguyen@gmail.com
+ ben.okafor@yandex.ru
+ carla.romero@yahoo.com
+(3 строки)
+
+
+postgres=# ALTER TABLE employees
+postgres-#   ADD COLUMN department_id INT;
+ALTER TABLE
+postgres=# UPDATE employees
+postgres-# SET department_id = CASE department
+postgres-#   WHEN 'Engineering' THEN 3
+postgres-#   WHEN 'Sales'       THEN 5
+postgres-#   WHEN 'Finance'     THEN 5
+postgres-#   ELSE NULL
+postgres-# END;
+UPDATE 3
+postgres=# SELECT first_name, last_name, department
+postgres-# FROM employees
+postgres-# WHERE department_id IN (3, 5, 7);
+ first_name | last_name | department
+------------+-----------+-------------
+ Alice      | Nguyen    | Engineering
+ Ben        | Okafor    | Sales
+ Carla      | Romero    | Finance
+(3 строки)
+
+
+postgres=# CREATE TABLE sales (
+postgres(#   id SERIAL PRIMARY KEY,
+postgres(#   employee_id INT NOT NULL REFERENCES employees(id),
+postgres(#   amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
+postgres(#   sale_ts TIMESTAMP NOT NULL DEFAULT now()
+postgres(# );
+CREATE TABLE
+postgres=# INSERT INTO sales (employee_id, amount) VALUES
+postgres-#   ((SELECT id FROM employees WHERE first_name='Alice' AND last_name='Nguyen'), 1500.00),
+postgres-#   ((SELECT id FROM employees WHERE first_name='Ben'   AND last_name='Okafor'),  900.00),
+postgres-#   ((SELECT id FROM employees WHERE first_name='Carla' AND last_name='Romero'), 2200.00);
+INSERT 0 3
+postgres=# SELECT * FROM sales;
+ id | employee_id | amount  |          sale_ts
+----+-------------+---------+----------------------------
+  1 |           1 | 1500.00 | 2025-10-07 22:20:36.939249
+  2 |           2 |  900.00 | 2025-10-07 22:20:36.939249
+  3 |           3 | 2200.00 | 2025-10-07 22:20:36.939249
+(3 строки)
+
+
+postgres=# SELECT first_name, last_name
+postgres-# FROM employees e
+postgres-# WHERE EXISTS (
+postgres(#   SELECT 1
+postgres(#   FROM sales s
+postgres(#   WHERE s.employee_id = e.id AND s.amount > 1000
+postgres(# );
+ first_name | last_name
+------------+-----------
+ Alice      | Nguyen
+ Carla      | Romero
+(2 строки)
+
+
+postgres=# SELECT first_name, last_name, salary,
+postgres-#   CASE
+postgres-#     WHEN salary > 100000 THEN 'Senior'
+postgres-#     WHEN salary BETWEEN 60000 AND 100000 THEN 'Mid-Level'
+postgres-#     ELSE 'Junior'
+postgres-#   END AS employee_level
+postgres-# FROM employees;
+ first_name | last_name |  salary  | employee_level
+------------+-----------+----------+----------------
+ Alice      | Nguyen    | 72000.00 | Mid-Level
+ Ben        | Okafor    | 55000.00 | Junior
+ Carla      | Romero    | 81000.00 | Mid-Level
+(3 строки)
+
+
+postgres=# INSERT INTO employees
+postgres-#   (first_name, last_name, salary, department, email, department_id)
+postgres-# VALUES
+postgres-#   ('Mina',  'Shah',  90000.00, 'Engineering', 'mina.shah@gmail.com', 3),
+postgres-#   ('Diego', 'Lopez', 60000.00, 'Sales',       'diego.lopez@gmail.com', 5);
+INSERT 0 2
+postgres=# WITH department_averages AS (
+postgres(#   SELECT department, AVG(salary) AS avg_salary
+postgres(#   FROM employees
+postgres(#   GROUP BY department
+postgres(# )
+postgres-# SELECT
+postgres-#   e.first_name || ' ' || e.last_name AS name,
+postgres-#   e.salary,
+postgres-#   e.department,
+postgres-#   da.avg_salary
+postgres-# FROM employees e
+postgres-# JOIN department_averages da
+postgres-#   ON e.department = da.department
+postgres-# WHERE e.salary > da.avg_salary;
+    name     |  salary  | department  |     avg_salary
+-------------+----------+-------------+--------------------
+ Mina Shah   | 90000.00 | Engineering | 81000.000000000000
+ Diego Lopez | 60000.00 | Sales       | 57500.000000000000
+(2 строки)
+
+
+postgres=# \q
+PS C:\Users\Emil>
