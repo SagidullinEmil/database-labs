@@ -16,7 +16,6 @@ Interface: psql CLI (PowerShell / VS Code terminal)
 Repository Structure
 
 ```md
-```text
 .
 ├── project/
 │ ├── schema/
