@@ -37,6 +37,18 @@ Repository Structure
 
 ------
 
+ER Diagram & Normalization
+
+The database schema is fully normalized (up to Third Normal Form).
+Each entity represents a single concept, and all non-key attributes depend only on the primary key.
+
+An ER diagram illustrating entities, primary keys, and foreign key relationships
+was generated using pgAdmin and is included in the repository:
+
+project/diagram/er_diagram.png
+
+------
+
 Core Features
 
 1. Dormitories and rooms with capacity and occupancy tracking
@@ -59,6 +71,24 @@ Business Rules Enforced
 
 ------
 
+Transactions & Indexing
+
+Transactions are used throughout the project to ensure data consistency.
+A dedicated SQL script demonstrates:
+
+- BEGIN / COMMIT
+- ROLLBACK
+- SAVEPOINT usage
+
+Indexes are created on foreign keys and frequently queried columns
+(e.g. student_id, room_id, contract status) to improve query performance.
+
+Relevant files:
+- project/queries/03_transactions_demo.sql
+- project/schema/02_constraints_indexes.sql
+
+------
+
 How to Run the Project
 
 1. Create the database
@@ -74,6 +104,32 @@ psql -U postgres -d dormitory_db -c "\dv"
 4. Run queries
 psql -U postgres -d dormitory_db -f project\queries\01_reports.sql
 psql -U postgres -d dormitory_db -f project\queries\02_analytics.sql
+
+------
+
+Backup & Restore Strategy
+
+The project uses PostgreSQL built-in tools for backup and recovery.
+
+Backup examples:
+pg_dump -U postgres -F c -d dormitory_db -f dormitory_db.backup
+pg_dump -U postgres -s -d dormitory_db -f dormitory_schema.sql
+pg_dump -U postgres -a -d dormitory_db -f dormitory_data.sql
+
+Restore example:
+pg_restore -U postgres -d dormitory_db_restore -c dormitory_db.backup
+
+A custom-format backup is used for full recovery,
+while schema-only and data-only backups are used before structural changes or migrations.
+
+------
+
+Design Rationale
+
+The system was designed to reflect a realistic university housing workflow.
+Business rules such as room capacity limits and single active contracts per student
+are enforced at the database level using constraints and triggers,
+ensuring data integrity regardless of application logic.
 
 ------
 
