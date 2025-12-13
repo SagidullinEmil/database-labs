@@ -15,6 +15,8 @@ Interface: psql CLI (PowerShell / VS Code terminal)
 
 Repository Structure
 
+```md
+```text
 .
 ├── project/
 │ ├── schema/
@@ -32,6 +34,7 @@ Repository Structure
 │ └── 02_analytics.sql
 │
 └── README.md
+```
 
 ------
 
